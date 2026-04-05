@@ -22,11 +22,13 @@ class OrderService
         try {
             $response = $this->apiClient->get('pedido');
         } catch (RuntimeException $e) {
-            return ['synced' => 0, 'total_received' => 0, 'error' => $e->getMessage()];
+            return ['synced' => 0, 'total_received' => 0, 'failed' => 0, 'error' => $e->getMessage()];
         }
 
-        $orders = $this->extractOrdersList($response);
-        $synced = 0;
+        $orders  = $this->extractOrdersList($response);
+        $synced  = 0;
+        $failed  = 0;
+        $errors  = [];
 
         foreach ($orders as $orderData) {
             try {
@@ -40,12 +42,19 @@ class OrderService
                 } else {
                     $this->repository->updateStatus($dto->marketplaceOrderId, $dto->status);
                 }
-            } catch (InvalidArgumentException) {
-                continue;
+            } catch (InvalidArgumentException $e) {
+                $failed++;
+                $errors[] = $e->getMessage();
             }
         }
 
-        return ['synced' => $synced, 'total_received' => count($orders)];
+        $result = ['synced' => $synced, 'total_received' => count($orders), 'failed' => $failed];
+
+        if ($failed > 0) {
+            $result['parse_errors'] = $errors;
+        }
+
+        return $result;
     }
 
     public function processOrder(string $marketplaceOrderId): array
