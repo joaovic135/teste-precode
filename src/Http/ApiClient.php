@@ -32,7 +32,8 @@ class ApiClient
 
     private function request(string $method, string $endpoint, array $payload = []): array
     {
-        $url = $this->baseUrl . '/' . ltrim($endpoint, '/');
+        $url      = $this->baseUrl . '/' . ltrim($endpoint, '/');
+        $endpoint = ltrim($endpoint, '/');
 
         $headers = [
             'Authorization: ' . $this->authToken,
@@ -63,13 +64,13 @@ class ApiClient
 
         if ($curlError) {
             throw new RuntimeException(
-                "HTTP request failed for {$method} {$url}: {$curlError}"
+                "Falha na requisição {$method} /{$endpoint}: {$curlError}"
             );
         }
 
         if ($httpCode >= 500) {
             throw new RuntimeException(
-                "Marketplace API returned server error {$httpCode} for {$method} {$url}"
+                "A API do marketplace retornou erro de servidor {$httpCode} em {$method} /{$endpoint}"
             );
         }
 
@@ -78,7 +79,7 @@ class ApiClient
         if (json_last_error() !== JSON_ERROR_NONE) {
             if ($httpCode >= 400) {
                 throw new RuntimeException(
-                    "Marketplace API error {$httpCode} for {$method} {$url}: non-JSON response received"
+                    "A API retornou erro {$httpCode} em {$method} /{$endpoint} com corpo não-JSON"
                 );
             }
 
@@ -86,9 +87,9 @@ class ApiClient
         }
 
         if ($httpCode >= 400) {
-            $message = $decoded['message'] ?? $decoded['error'] ?? $responseBody;
+            $message = $decoded['message'] ?? $decoded['error'] ?? "(sem mensagem)";
             throw new RuntimeException(
-                "Marketplace API error {$httpCode} for {$method} {$url}: {$message}"
+                "A API retornou erro {$httpCode} em {$method} /{$endpoint}: {$message}"
             );
         }
 
