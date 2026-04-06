@@ -7,6 +7,7 @@ namespace App\Http;
 use App\Marketplace\OrderService;
 use App\Marketplace\PriceStockService;
 use App\Marketplace\ProductService;
+use InvalidArgumentException;
 use RuntimeException;
 
 class Router
@@ -71,11 +72,19 @@ class Router
             return [];
         }
 
+        $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
+
+        if (!str_contains($contentType, 'application/json')) {
+            throw new InvalidArgumentException(
+                "Content-Type deve ser application/json, recebido: '{$contentType}'"
+            );
+        }
+
         $raw     = file_get_contents('php://input');
         $decoded = json_decode($raw ?: '{}', true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 'O corpo da requisição não é um JSON válido: ' . json_last_error_msg()
             );
         }
@@ -101,7 +110,7 @@ class Router
     private function requireFloat(array $body, string $field): float
     {
         if (!isset($body[$field])) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "O campo '{$field}' é obrigatório no corpo da requisição"
             );
         }
@@ -112,7 +121,7 @@ class Router
     private function requireInt(array $body, string $field): int
     {
         if (!isset($body[$field])) {
-            throw new \InvalidArgumentException(
+            throw new InvalidArgumentException(
                 "O campo '{$field}' é obrigatório no corpo da requisição"
             );
         }
