@@ -61,8 +61,8 @@ php -S localhost:8000 -t public
 | `DB_NAME`               | Nome do banco                                 | `hub_marketplace`                          |
 | `DB_USER`               | Usuário do banco                              | `postgres`                                 |
 | `DB_PASS`               | Senha do banco                                | `postgres`                                 |
-| `MARKETPLACE_API_URL`   | URL base da API (sem versão)                  | `https://www.replicade.com.br/api`         |
-| `MARKETPLACE_API_TOKEN` | Token de autenticação Basic                   | `Basic aXdPMzVLZ09EZnRvOHY3M1I6`          |
+| `MARKETPLACE_API_URL`   | URL base da API (sem versão)                  | `https://api.seumarketplace.com.br/api`    |
+| `MARKETPLACE_API_TOKEN` | Token de autenticação Basic                   | `Basic <seu_token_aqui>`                   |
 
 ## Endpoints da API utilizados
 
@@ -79,7 +79,7 @@ Implementação baseada na [documentação oficial](https://www.precode.com.br/a
 
 ### Notas sobre o ambiente de teste
 
-Com a credencial fornecida (`Basic aXdPMzVLZ09EZnRvOHY3M1I6`):
+Com as credenciais de teste fornecidas:
 
 | Endpoint                    | Resultado observado                                                              |
 |-----------------------------|----------------------------------------------------------------------------------|
