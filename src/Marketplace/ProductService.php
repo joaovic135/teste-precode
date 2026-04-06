@@ -30,7 +30,7 @@ class ProductService
         $this->repository->insert($dto);
 
         try {
-            $response = $this->apiClient->post('products', $dto->toMarketplacePayload());
+            $response = $this->apiClient->post('v3/products', $dto->toMarketplacePayload());
 
             $this->assertApiSuccess($response);
 

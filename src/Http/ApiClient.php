@@ -30,9 +30,9 @@ class ApiClient
         return $this->request('PUT', $endpoint, $payload);
     }
 
-    public function delete(string $endpoint): array
+    public function delete(string $endpoint, array $payload = []): array
     {
-        return $this->request('DELETE', $endpoint);
+        return $this->request('DELETE', $endpoint, $payload);
     }
 
     private function request(string $method, string $endpoint, array $payload = []): array

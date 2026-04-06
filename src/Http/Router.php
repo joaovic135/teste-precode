@@ -24,12 +24,14 @@ class Router
         $segments = $this->parseSegments($uri);
 
         return match (true) {
+            // Produtos
             $method === 'GET'  && $segments === ['api', 'products']
                 => $this->productService->listProducts(),
 
             $method === 'POST' && $segments === ['api', 'products']
                 => $this->productService->registerProduct($body),
 
+            // Preço / estoque
             $method === 'PUT'  && $this->matches($segments, ['api', 'products', '*', 'price'])
                 => $this->priceStockService->updatePrice(
                     urldecode($segments[2]),
@@ -45,14 +47,21 @@ class Router
             $method === 'GET'  && $segments === ['api', 'updates']
                 => $this->priceStockService->listUpdateHistory(),
 
+            // Pedidos
             $method === 'GET'  && $segments === ['api', 'orders']
                 => $this->orderService->listOrders(),
+
+            $method === 'POST' && $segments === ['api', 'orders']
+                => $this->orderService->createOrder($body),
 
             $method === 'POST' && $segments === ['api', 'orders', 'sync']
                 => $this->orderService->syncOrders(),
 
-            $method === 'POST' && $this->matches($segments, ['api', 'orders', '*', 'process'])
-                => $this->orderService->processOrder(urldecode($segments[2])),
+            $method === 'POST' && $this->matches($segments, ['api', 'orders', '*', 'approve'])
+                => $this->orderService->approveOrder(urldecode($segments[2])),
+
+            $method === 'POST' && $this->matches($segments, ['api', 'orders', '*', 'cancel'])
+                => $this->orderService->cancelOrder(urldecode($segments[2])),
 
             default => throw new RuntimeException(
                 "Rota não encontrada: {$method} {$uri}",
@@ -68,7 +77,7 @@ class Router
 
     private function parseBody(string $method): array
     {
-        if (!in_array($method, ['POST', 'PUT', 'PATCH'], true)) {
+        if (!in_array($method, ['POST', 'PUT', 'PATCH', 'DELETE'], true)) {
             return [];
         }
 

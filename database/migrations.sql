@@ -34,17 +34,22 @@ CREATE TABLE IF NOT EXISTS price_stock_updates (
 );
 
 CREATE TABLE IF NOT EXISTS orders (
-    id                   SERIAL PRIMARY KEY,
-    marketplace_order_id VARCHAR(100)   UNIQUE NOT NULL,
-    partner_order_id     VARCHAR(100)   DEFAULT '',
-    status               VARCHAR(50)    NOT NULL,
-    customer_name        VARCHAR(255)   DEFAULT '',
-    total                NUMERIC(10, 2) DEFAULT 0,
-    items                JSONB          DEFAULT '[]',
-    raw_data             JSONB,
-    processed_at         TIMESTAMPTZ    DEFAULT NULL,
-    created_at           TIMESTAMPTZ    DEFAULT NOW(),
-    updated_at           TIMESTAMPTZ    DEFAULT NOW()
+    id                       SERIAL PRIMARY KEY,
+    marketplace_order_id     VARCHAR(100)   UNIQUE NOT NULL,
+    marketplace_codigo_pedido INTEGER        DEFAULT NULL,
+    partner_order_id         VARCHAR(100)   DEFAULT '',
+    origin                   VARCHAR(20)    DEFAULT 'incoming',
+    status                   VARCHAR(50)    NOT NULL DEFAULT 'novo',
+    customer_name            VARCHAR(255)   DEFAULT '',
+    total                    NUMERIC(10, 2) DEFAULT 0,
+    items                    JSONB          DEFAULT '[]',
+    raw_data                 JSONB,
+    marketplace_status       VARCHAR(20)    DEFAULT 'pending',
+    marketplace_error        TEXT           DEFAULT NULL,
+    approved_at              TIMESTAMPTZ    DEFAULT NULL,
+    cancelled_at             TIMESTAMPTZ    DEFAULT NULL,
+    created_at               TIMESTAMPTZ    DEFAULT NOW(),
+    updated_at               TIMESTAMPTZ    DEFAULT NOW()
 );
 
 CREATE OR REPLACE FUNCTION set_updated_at()

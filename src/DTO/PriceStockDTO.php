@@ -96,6 +96,6 @@ class PriceStockDTO
 
     public function marketplaceEndpoint(): string
     {
-        return 'products/inventory';
+        return 'v3/products/inventory';
     }
 }

@@ -12,7 +12,7 @@ services:
       DB_NAME: hub_marketplace
       DB_USER: postgres
       DB_PASS: postgres
-      MARKETPLACE_API_URL: https://www.replicade.com.br/api/v3
+      MARKETPLACE_API_URL: https://www.replicade.com.br/api
       MARKETPLACE_API_TOKEN: "Basic aXdPMzVLZ09EZnRvOHY3M1I6"
     depends_on:
       db:
@@ -29,7 +29,8 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./database/migrations.sql:/docker-entrypoint-initdb.d/migrations.sql
+      - ./database/migrations.sql:/docker-entrypoint-initdb.d/01_migrations.sql
+      - ./database/migrations_v3.sql:/docker-entrypoint-initdb.d/02_migrations_v3.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d hub_marketplace"]
       interval: 5s
