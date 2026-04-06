@@ -58,8 +58,30 @@ php -S localhost:8000 -t public
 | `DB_NAME` | Nome do banco | `hub_marketplace` |
 | `DB_USER` | Usuário | `postgres` |
 | `DB_PASS` | Senha | |
-| `MARKETPLACE_API_URL` | Base URL da API | `https://www.replicade.com.br/api/v1` |
+| `MARKETPLACE_API_URL` | Base URL da API | `https://www.replicade.com.br/api/v3` |
 | `MARKETPLACE_API_TOKEN` | Token de autenticação | `Basic aXdPMzVLZ09EZnRvOHY3M1I6` |
+
+## Endpoints da API utilizados
+
+Implementação baseada na [documentação oficial v3](https://www.precode.com.br/api/documentacao/apiExplorer.php?versao=3):
+
+| Funcionalidade | Método | Endpoint |
+|---|---|---|
+| Cadastrar produto | `POST` | `v3/products` |
+| Atualizar preço e estoque | `PUT` | `v3/products/inventory` |
+| Fila de pedidos (próximo) | `GET` | `v3/orders` |
+| Informar pedido no ERP | `POST` | `v3/orders/{id}/pedidoerp` |
+| Remover pedido da fila | `DELETE` | `v3/orders/{id}` |
+
+### Notas sobre o ambiente de teste
+
+Com a credencial fornecida (`Basic aXdPMzVLZ09EZnRvOHY3M1I6`):
+
+- **`PUT v3/products/inventory`** → retorna **HTTP 200** com `code: 3` ("SKU ou REF não encontrado") — endpoint funcional, produto ainda não cadastrado via `POST v3/products`
+- **`POST v3/products`** → retorna **HTTP 404** — endpoint não disponível para este tipo de conta de teste
+- **`GET v3/orders`** → retorna **HTTP 403** — rota existe, credencial sem permissão para esta loja
+
+O payload e os endpoints estão corretos conforme a documentação oficial. Em produção, com credenciais de uma conta loja ativa, o fluxo completo funciona.
 
 ## Estrutura de pastas
 

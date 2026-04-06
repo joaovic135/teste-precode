@@ -21,13 +21,20 @@ class OrderDTO
     ) {}
 
     /**
-     * Suporta duas estruturas da API:
-     *  - pedidoStatus: { numeroPedido, idPedidoParceiro, statusAtual, idStatusAtual }
-     *  - pedido completo: { codigoPedido, pedidoParceiro, statusAtual, dadosCliente, ... }
+     * Constrói a partir da estrutura de fila da API v3 (GET v3/orders):
+     *
+     * {
+     *   "code": "123456",
+     *   "cod_partner": "parceiro-001",
+     *   "status": { "type": "novo", "label": "Novo" },
+     *   "customer": { "name": "João", "email": "..." },
+     *   "total_ordered": 199.90,
+     *   "items": [{ "product_id": "", "name": "", "qty": "", ... }]
+     * }
      */
     public static function fromMarketplaceResponse(array $data): self
     {
-        $orderId = (string) ($data['numeroPedido'] ?? $data['codigoPedido'] ?? '');
+        $orderId = (string) ($data['code'] ?? $data['numeroPedido'] ?? $data['codigoPedido'] ?? '');
 
         if ($orderId === '') {
             throw new InvalidArgumentException(
@@ -35,16 +42,23 @@ class OrderDTO
             );
         }
 
-        $partnerOrderId = (string) ($data['idPedidoParceiro'] ?? $data['pedidoParceiro'] ?? '');
-        $customerData   = $data['dadosCliente'] ?? [];
-        $customerName   = (string) ($customerData['nomeRazao'] ?? $partnerOrderId);
-        $total          = (float) ($data['valorTotalCompra'] ?? 0.0);
-        $items          = (array) ($data['itens'] ?? []);
+        $partnerOrderId = (string) ($data['cod_partner'] ?? $data['idPedidoParceiro'] ?? $data['pedidoParceiro'] ?? '');
+
+        $statusRaw  = $data['status'] ?? [];
+        $statusLabel = is_array($statusRaw)
+            ? (string) ($statusRaw['type'] ?? $statusRaw['label'] ?? self::STATUS_NEW)
+            : (string) $statusRaw;
+
+        $customer     = $data['customer'] ?? $data['dadosCliente'] ?? [];
+        $customerName = (string) ($customer['name'] ?? $customer['nomeRazao'] ?? $partnerOrderId);
+
+        $total = (float) ($data['total_ordered'] ?? $data['valorTotalCompra'] ?? 0.0);
+        $items = (array) ($data['items'] ?? $data['itens'] ?? []);
 
         return new self(
             marketplaceOrderId: $orderId,
             partnerOrderId:     $partnerOrderId,
-            status:             (string) ($data['statusAtual'] ?? self::STATUS_NEW),
+            status:             $statusLabel,
             customerName:       $customerName,
             total:              $total,
             items:              $items,

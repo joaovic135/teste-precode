@@ -12,32 +12,46 @@ use RuntimeException;
 
 class OrderService
 {
-    private const SYNC_WINDOW_DAYS = 30;
+    private const MAX_QUEUE_PULL = 50;
 
     public function __construct(
         private OrderRepository $repository,
         private ApiClient       $apiClient,
     ) {}
 
+    /**
+     * Drena a fila da API v3 (GET v3/orders) importando cada pedido localmente.
+     *
+     * A fila retorna HTTP 204 (corpo vazio → array vazio) quando não há mais pedidos.
+     * Os pedidos NÃO são removidos da fila aqui — isso ocorre em processOrder().
+     */
     public function syncOrders(): array
     {
-        $today     = date('Y-m-d');
-        $startDate = date('Y-m-d', strtotime('-' . self::SYNC_WINDOW_DAYS . ' days'));
-
-        try {
-            $response = $this->apiClient->get("pedido/pedidoStatus/{$startDate}/{$today}");
-        } catch (RuntimeException $e) {
-            return ['synced' => 0, 'total_received' => 0, 'failed' => 0, 'error' => $e->getMessage()];
-        }
-
-        $orders = $this->extractOrdersList($response);
         $synced = 0;
         $failed = 0;
         $errors = [];
+        $pulled = 0;
 
-        foreach ($orders as $orderData) {
+        while ($pulled < self::MAX_QUEUE_PULL) {
             try {
-                $dto      = OrderDTO::fromMarketplaceResponse($orderData);
+                $response = $this->apiClient->get('orders');
+            } catch (RuntimeException $e) {
+                return [
+                    'synced'         => $synced,
+                    'total_received' => $pulled,
+                    'failed'         => $failed,
+                    'error'          => $e->getMessage(),
+                ];
+            }
+
+            if (empty($response)) {
+                break;
+            }
+
+            $pulled++;
+
+            try {
+                $dto      = OrderDTO::fromMarketplaceResponse($response);
                 $existing = $this->repository->findByMarketplaceId($dto->marketplaceOrderId);
 
                 if ($existing === null) {
@@ -52,15 +66,22 @@ class OrderService
             }
         }
 
-        $result = ['synced' => $synced, 'total_received' => count($orders), 'failed' => $failed];
+        $result = ['synced' => $synced, 'total_received' => $pulled, 'failed' => $failed];
 
-        if ($failed > 0) {
+        if (!empty($errors)) {
             $result['parse_errors'] = $errors;
         }
 
         return $result;
     }
 
+    /**
+     * Processa um pedido: informa o número ERP ao marketplace e remove da fila.
+     *
+     * Fluxo v3:
+     *  1. POST v3/orders/{id}/pedidoerp  → informa que o pedido foi gerado no ERP
+     *  2. DELETE v3/orders/{id}          → remove da fila de processamento
+     */
     public function processOrder(string $marketplaceOrderId): array
     {
         $order = $this->repository->findByMarketplaceId($marketplaceOrderId);
@@ -78,12 +99,14 @@ class OrderService
         }
 
         try {
-            $this->apiClient->put('pedido/pedido', [
-                'pedido' => [
-                    'codigoPedido'     => (int) $marketplaceOrderId,
-                    'idPedidoParceiro' => $order['partner_order_id'] ?? '',
-                ],
-            ]);
+            $erpResponse = $this->apiClient->post(
+                "orders/{$marketplaceOrderId}/pedidoerp",
+                ['pedidoerp' => (int) $order['id'], 'fp' => 1, 'flf' => 1],
+            );
+
+            $this->assertOrderApiSuccess($erpResponse, 'pedidoerp');
+
+            $this->apiClient->delete("orders/{$marketplaceOrderId}");
         } catch (RuntimeException $e) {
             return [
                 'marketplace_order_id' => $marketplaceOrderId,
@@ -102,20 +125,19 @@ class OrderService
         return $this->repository->findAll();
     }
 
-    private function extractOrdersList(array $response): array
+    /**
+     * Verifica resposta de endpoints de pedido v3:
+     * { "Code": "complete"|"order_error", "Type": "SUCCESS"|"ERROR", "Label": "..." }
+     */
+    private function assertOrderApiSuccess(array $response, string $context): void
     {
-        if (isset($response['pedido']) && is_array($response['pedido'])) {
-            return $response['pedido'];
-        }
+        $type = strtoupper((string) ($response['Type'] ?? $response['type'] ?? 'SUCCESS'));
 
-        if (isset($response['pedidos']) && is_array($response['pedidos'])) {
-            return $response['pedidos'];
+        if ($type === 'ERROR') {
+            $label = (string) ($response['Label'] ?? $response['label'] ?? 'erro desconhecido');
+            throw new RuntimeException(
+                "Falha ao executar {$context} no marketplace: {$label}"
+            );
         }
-
-        if (array_is_list($response)) {
-            return $response;
-        }
-
-        return [];
     }
 }

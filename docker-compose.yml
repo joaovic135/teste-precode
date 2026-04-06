@@ -12,7 +12,7 @@ services:
       DB_NAME: hub_marketplace
       DB_USER: postgres
       DB_PASS: postgres
-      MARKETPLACE_API_URL: https://www.replicade.com.br/api/v1
+      MARKETPLACE_API_URL: https://www.replicade.com.br/api/v3
       MARKETPLACE_API_TOKEN: "Basic aXdPMzVLZ09EZnRvOHY3M1I6"
     depends_on:
       db:

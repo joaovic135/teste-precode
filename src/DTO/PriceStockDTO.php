@@ -6,64 +6,89 @@ namespace App\DTO;
 
 use InvalidArgumentException;
 
+/**
+ * DTO para atualização de inventário via PUT v3/products/inventory.
+ *
+ * A API v3 unificou preço e estoque em um único endpoint — é necessário
+ * enviar todos os campos mesmo quando apenas um deles é alterado.
+ */
 class PriceStockDTO
 {
     public const TYPE_PRICE = 'price';
     public const TYPE_STOCK = 'stock';
 
-    private const FILIAL_PADRAO = 1;
+    private const STORES_DEFAULT = 1;
 
     public function __construct(
-        public readonly string $sku,
+        public readonly string $ref,
         public readonly string $type,
-        public readonly float  $value,
+        public readonly float  $price,
+        public readonly float  $promotionalPrice,
+        public readonly float  $cost,
+        public readonly int    $stock,
+        public readonly string $status       = 'enabled',
+        public readonly int    $shippingTime = 0,
     ) {}
 
-    public static function forPrice(string $sku, float $price): self
+    /**
+     * Cria DTO para atualizar preço, mantendo estoque/custo atuais do produto.
+     */
+    public static function withNewPrice(array $product, float $newPrice): self
     {
-        if ($price <= 0) {
+        if ($newPrice <= 0) {
             throw new InvalidArgumentException(
-                "Preço deve ser maior que zero, recebido: {$price}"
+                "Preço deve ser maior que zero, recebido: {$newPrice}"
             );
         }
 
-        return new self(sku: $sku, type: self::TYPE_PRICE, value: $price);
+        $currentPromo = (float) $product['promotional_price'];
+        $promotionalPrice = $currentPromo >= $newPrice ? $currentPromo : $newPrice;
+
+        return new self(
+            ref:              (string) $product['sku'],
+            type:             self::TYPE_PRICE,
+            price:            $newPrice,
+            promotionalPrice: $promotionalPrice,
+            cost:             (float) $product['cost'],
+            stock:            (int)   $product['stock'],
+        );
     }
 
-    public static function forStock(string $sku, int $stock): self
+    /**
+     * Cria DTO para atualizar estoque, mantendo preços/custo atuais do produto.
+     */
+    public static function withNewStock(array $product, int $newStock): self
     {
-        if ($stock < 0) {
+        if ($newStock < 0) {
             throw new InvalidArgumentException(
-                "Estoque não pode ser negativo, recebido: {$stock}"
+                "Estoque não pode ser negativo, recebido: {$newStock}"
             );
         }
 
-        return new self(sku: $sku, type: self::TYPE_STOCK, value: (float) $stock);
+        return new self(
+            ref:              (string) $product['sku'],
+            type:             self::TYPE_STOCK,
+            price:            (float) $product['price'],
+            promotionalPrice: (float) $product['promotional_price'],
+            cost:             (float) $product['cost'],
+            stock:            $newStock,
+        );
     }
 
     public function toMarketplacePayload(): array
     {
-        if ($this->type === self::TYPE_PRICE) {
-            return [
-                'produto' => [[
-                    'IdReferencia' => $this->sku,
-                    'precoDe'      => $this->value,
-                    'precoVenda'   => $this->value,
-                ]],
-            ];
-        }
-
-        $qty = (int) $this->value;
-
         return [
-            'produto' => [[
-                'IdReferencia' => $this->sku,
-                'estoque'      => [[
-                    'filialSaldo'      => self::FILIAL_PADRAO,
-                    'saldoReal'        => $qty,
-                    'saldoDisponivel'  => $qty,
-                    'prazoAdicional'   => 0,
-                    'tipoSaldo'        => 'A',
+            'products' => [[
+                'ref'               => $this->ref,
+                'price'             => $this->price,
+                'promotional_price' => $this->promotionalPrice,
+                'cost'              => $this->cost,
+                'shippingTime'      => $this->shippingTime,
+                'status'            => $this->status,
+                'stock'             => [[
+                    'stores'         => self::STORES_DEFAULT,
+                    'availableStock' => $this->stock,
+                    'realStock'      => $this->stock,
                 ]],
             ]],
         ];
@@ -71,10 +96,6 @@ class PriceStockDTO
 
     public function marketplaceEndpoint(): string
     {
-        if ($this->type === self::TYPE_PRICE) {
-            return 'produtoLoja/preco';
-        }
-
-        return 'produtoLoja/saldo';
+        return 'products/inventory';
     }
 }

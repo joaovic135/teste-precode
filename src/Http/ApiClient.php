@@ -30,6 +30,11 @@ class ApiClient
         return $this->request('PUT', $endpoint, $payload);
     }
 
+    public function delete(string $endpoint): array
+    {
+        return $this->request('DELETE', $endpoint);
+    }
+
     private function request(string $method, string $endpoint, array $payload = []): array
     {
         $url      = $this->baseUrl . '/' . ltrim($endpoint, '/');
@@ -75,6 +80,13 @@ class ApiClient
         }
 
         $decoded = json_decode($responseBody ?: '{}', true);
+
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            // A API Precode às vezes retorna JSON malformado com valores ausentes (ex: "sku": ,).
+            // Tentativa de correção: substituir padrão inválido por null antes de decodificar.
+            $fixed   = preg_replace('/:\s*,/', ': null,', $responseBody ?? '');
+            $decoded = json_decode($fixed ?? '{}', true);
+        }
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             if ($httpCode >= 400) {

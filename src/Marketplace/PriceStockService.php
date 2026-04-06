@@ -29,7 +29,7 @@ class PriceStockService
             );
         }
 
-        $dto   = PriceStockDTO::forPrice($sku, $newPrice);
+        $dto   = PriceStockDTO::withNewPrice($product, $newPrice);
         $logId = $this->updateLogRepository->insert(
             $sku,
             PriceStockDTO::TYPE_PRICE,
@@ -40,7 +40,7 @@ class PriceStockService
         try {
             $response = $this->apiClient->put($dto->marketplaceEndpoint(), $dto->toMarketplacePayload());
 
-            $this->assertApiProductSuccess($response, 'preço');
+            $this->assertInventorySuccess($response);
 
             $this->productRepository->updatePrice($sku, $newPrice);
             $this->updateLogRepository->markAsSent($logId);
@@ -63,7 +63,7 @@ class PriceStockService
             );
         }
 
-        $dto   = PriceStockDTO::forStock($sku, $newStock);
+        $dto   = PriceStockDTO::withNewStock($product, $newStock);
         $logId = $this->updateLogRepository->insert(
             $sku,
             PriceStockDTO::TYPE_STOCK,
@@ -74,7 +74,7 @@ class PriceStockService
         try {
             $response = $this->apiClient->put($dto->marketplaceEndpoint(), $dto->toMarketplacePayload());
 
-            $this->assertApiProductSuccess($response, 'estoque');
+            $this->assertInventorySuccess($response);
 
             $this->productRepository->updateStock($sku, $newStock);
             $this->updateLogRepository->markAsSent($logId);
@@ -93,23 +93,29 @@ class PriceStockService
     }
 
     /**
-     * A Precode retorna HTTP 200 mesmo em falha de negócio, indicando o erro via
-     * idMensagem != 0 dentro de produto[0]. Lança RuntimeException se o campo indicar falha.
+     * A API v3 retorna HTTP 200 mesmo em falha de negócio via products[0].return[0].code.
+     * code = 0 → sucesso; qualquer outro valor → mensagem de erro.
      */
-    private function assertApiProductSuccess(array $response, string $context): void
+    private function assertInventorySuccess(array $response): void
     {
-        $first = $response['produto'][0] ?? null;
+        $first  = $response['products'][0] ?? null;
 
         if ($first === null) {
             return;
         }
 
-        $idMensagem = (int) ($first['idMensagem'] ?? 0);
+        $ret  = $first['return'][0] ?? null;
 
-        if ($idMensagem !== 0) {
-            $mensagem = (string) ($first['mensagem'] ?? 'erro desconhecido da API');
+        if ($ret === null) {
+            return;
+        }
+
+        $code = (int) ($ret['code'] ?? 0);
+
+        if ($code !== 0) {
+            $message = (string) ($ret['message'] ?? 'erro desconhecido da API');
             throw new RuntimeException(
-                "Falha ao atualizar {$context} no marketplace: {$mensagem} (código {$idMensagem})"
+                "Falha ao atualizar inventário no marketplace: {$message} (código {$code})"
             );
         }
     }
