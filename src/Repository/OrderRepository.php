@@ -43,7 +43,7 @@ class OrderRepository
             ':marketplace_order_id' => $dto->marketplaceOrderId,
             ':status'               => $dto->status,
             ':customer_name'        => $dto->customerName,
-            ':customer_email'       => $dto->customerEmail,
+            ':customer_email'       => '',
             ':total'                => $dto->total,
             ':items'                => json_encode($dto->items),
             ':raw_data'             => json_encode($dto->rawData),

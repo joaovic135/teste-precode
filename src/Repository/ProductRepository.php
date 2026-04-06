@@ -31,18 +31,30 @@ class ProductRepository
     public function insert(ProductDTO $dto): void
     {
         $stmt = $this->db->prepare(
-            'INSERT INTO products (sku, name, description, category, price, stock, images)
-             VALUES (:sku, :name, :description, :category, :price, :stock, :images)'
+            'INSERT INTO products
+                (sku, name, description, category, brand, weight, width, height, length,
+                 cost, promotional_price, ean, price, stock, images)
+             VALUES
+                (:sku, :name, :description, :category, :brand, :weight, :width, :height, :length,
+                 :cost, :promotional_price, :ean, :price, :stock, :images)'
         );
 
         $stmt->execute([
-            ':sku'         => $dto->sku,
-            ':name'        => $dto->name,
-            ':description' => $dto->description,
-            ':category'    => $dto->category,
-            ':price'       => $dto->price,
-            ':stock'       => $dto->stock,
-            ':images'      => json_encode($dto->images),
+            ':sku'               => $dto->sku,
+            ':name'              => $dto->name,
+            ':description'       => $dto->description,
+            ':category'          => $dto->category,
+            ':brand'             => $dto->brand,
+            ':weight'            => $dto->weight,
+            ':width'             => $dto->width,
+            ':height'            => $dto->height,
+            ':length'            => $dto->length,
+            ':cost'              => $dto->cost,
+            ':promotional_price' => $dto->promotionalPrice,
+            ':ean'               => $dto->ean,
+            ':price'             => $dto->price,
+            ':stock'             => $dto->stock,
+            ':images'            => json_encode($dto->images),
         ]);
     }
 

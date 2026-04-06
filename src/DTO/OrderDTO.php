@@ -12,17 +12,22 @@ class OrderDTO
 
     public function __construct(
         public readonly string $marketplaceOrderId,
+        public readonly string $partnerOrderId,
         public readonly string $status,
         public readonly string $customerName,
-        public readonly string $customerEmail,
         public readonly float  $total,
-        public readonly array  $items,
-        public readonly array  $rawData,
+        public readonly array  $items   = [],
+        public readonly array  $rawData = [],
     ) {}
 
+    /**
+     * Suporta duas estruturas da API:
+     *  - pedidoStatus: { numeroPedido, idPedidoParceiro, statusAtual, idStatusAtual }
+     *  - pedido completo: { codigoPedido, pedidoParceiro, statusAtual, dadosCliente, ... }
+     */
     public static function fromMarketplaceResponse(array $data): self
     {
-        $orderId = (string) ($data['id'] ?? $data['pedido_id'] ?? '');
+        $orderId = (string) ($data['numeroPedido'] ?? $data['codigoPedido'] ?? '');
 
         if ($orderId === '') {
             throw new InvalidArgumentException(
@@ -30,13 +35,19 @@ class OrderDTO
             );
         }
 
+        $partnerOrderId = (string) ($data['idPedidoParceiro'] ?? $data['pedidoParceiro'] ?? '');
+        $customerData   = $data['dadosCliente'] ?? [];
+        $customerName   = (string) ($customerData['nomeRazao'] ?? $partnerOrderId);
+        $total          = (float) ($data['valorTotalCompra'] ?? 0.0);
+        $items          = (array) ($data['itens'] ?? []);
+
         return new self(
             marketplaceOrderId: $orderId,
-            status:             (string) ($data['status'] ?? self::STATUS_NEW),
-            customerName:       (string) ($data['cliente']['nome']  ?? $data['cliente']['name'] ?? ''),
-            customerEmail:      (string) ($data['cliente']['email'] ?? ''),
-            total:              (float)  ($data['total'] ?? $data['valor_total'] ?? 0),
-            items:              (array)  ($data['itens'] ?? $data['items'] ?? []),
+            partnerOrderId:     $partnerOrderId,
+            status:             (string) ($data['statusAtual'] ?? self::STATUS_NEW),
+            customerName:       $customerName,
+            total:              $total,
+            items:              $items,
             rawData:            $data,
         );
     }

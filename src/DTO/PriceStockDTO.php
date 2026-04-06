@@ -11,6 +11,8 @@ class PriceStockDTO
     public const TYPE_PRICE = 'price';
     public const TYPE_STOCK = 'stock';
 
+    private const FILIAL_PADRAO = 1;
+
     public function __construct(
         public readonly string $sku,
         public readonly string $type,
@@ -42,18 +44,37 @@ class PriceStockDTO
     public function toMarketplacePayload(): array
     {
         if ($this->type === self::TYPE_PRICE) {
-            return ['sku' => $this->sku, 'preco' => $this->value];
+            return [
+                'produto' => [[
+                    'IdReferencia' => $this->sku,
+                    'precoDe'      => $this->value,
+                    'precoVenda'   => $this->value,
+                ]],
+            ];
         }
 
-        return ['sku' => $this->sku, 'estoque' => (int) $this->value];
+        $qty = (int) $this->value;
+
+        return [
+            'produto' => [[
+                'IdReferencia' => $this->sku,
+                'estoque'      => [[
+                    'filialSaldo'      => self::FILIAL_PADRAO,
+                    'saldoReal'        => $qty,
+                    'saldoDisponivel'  => $qty,
+                    'prazoAdicional'   => 0,
+                    'tipoSaldo'        => 'A',
+                ]],
+            ]],
+        ];
     }
 
     public function marketplaceEndpoint(): string
     {
         if ($this->type === self::TYPE_PRICE) {
-            return "produto/{$this->sku}/preco";
+            return 'produtoLoja/preco';
         }
 
-        return "produto/{$this->sku}/estoque";
+        return 'produtoLoja/saldo';
     }
 }

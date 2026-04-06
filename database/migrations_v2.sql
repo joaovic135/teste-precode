@@ -1,0 +1,9 @@
+ALTER TABLE products
+    ADD COLUMN IF NOT EXISTS brand              VARCHAR(100)   DEFAULT '',
+    ADD COLUMN IF NOT EXISTS weight            NUMERIC(10, 3) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS width             NUMERIC(10, 3) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS height            NUMERIC(10, 3) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS length            NUMERIC(10, 3) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS cost              NUMERIC(10, 2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS promotional_price NUMERIC(10, 2) DEFAULT 0,
+    ADD COLUMN IF NOT EXISTS ean               VARCHAR(50)    DEFAULT '';

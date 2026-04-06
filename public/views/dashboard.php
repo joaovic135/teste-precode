@@ -30,36 +30,86 @@
             </div>
             <div class="card__body">
                 <form id="form-product" class="form" novalidate>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="product-sku">SKU</label>
-                            <input type="text" id="product-sku" name="sku" class="form-input" required autocomplete="off">
+                    <p class="form-hint">Campos obrigatórios pela API Precode: nome (mín. 20 caracteres), descrição (mín. 100 caracteres), marca, dimensões e custos.</p>
+
+                    <fieldset class="form-fieldset">
+                        <legend class="form-legend">Identificação</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="product-sku">SKU *</label>
+                                <input type="text" id="product-sku" name="sku" class="form-input" required autocomplete="off">
+                            </div>
+                            <div class="form-group form-group--wide">
+                                <label class="form-label" for="product-name">Nome * <span class="form-label__hint">(mín. 20 caracteres)</span></label>
+                                <input type="text" id="product-name" name="name" class="form-input" required minlength="20">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-brand">Marca *</label>
+                                <input type="text" id="product-brand" name="brand" class="form-input" required>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="product-name">Nome</label>
-                            <input type="text" id="product-name" name="name" class="form-input" required>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="product-category">Categoria</label>
+                                <input type="text" id="product-category" name="category" class="form-input">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-ean">EAN / Código de barras</label>
+                                <input type="text" id="product-ean" name="ean" class="form-input" autocomplete="off">
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="product-category">Categoria</label>
-                            <input type="text" id="product-category" name="category" class="form-input">
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend class="form-legend">Preços e Estoque</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="product-price">Preço de venda (R$) *</label>
+                                <input type="number" id="product-price" name="price" class="form-input" step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-promotional-price">Preço "De" (R$) <span class="form-label__hint">(≥ preço de venda)</span></label>
+                                <input type="number" id="product-promotional-price" name="promotional_price" class="form-input" step="0.01" min="0.01">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-cost">Custo (R$) *</label>
+                                <input type="number" id="product-cost" name="cost" class="form-input" step="0.01" min="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-stock">Estoque *</label>
+                                <input type="number" id="product-stock" name="stock" class="form-input" min="0" required>
+                            </div>
                         </div>
-                    </div>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label class="form-label" for="product-price">Preço (R$)</label>
-                            <input type="number" id="product-price" name="price" class="form-input" step="0.01" min="0.01" required>
+                    </fieldset>
+
+                    <fieldset class="form-fieldset">
+                        <legend class="form-legend">Dimensões e Peso</legend>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="product-weight">Peso bruto (kg) *</label>
+                                <input type="number" id="product-weight" name="weight" class="form-input" step="0.001" min="0.001" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-width">Largura (cm) *</label>
+                                <input type="number" id="product-width" name="width" class="form-input" step="0.1" min="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-height">Altura (cm) *</label>
+                                <input type="number" id="product-height" name="height" class="form-input" step="0.1" min="0.1" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="product-length">Profundidade (cm) *</label>
+                                <input type="number" id="product-length" name="length" class="form-input" step="0.1" min="0.1" required>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label class="form-label" for="product-stock">Estoque</label>
-                            <input type="number" id="product-stock" name="stock" class="form-input" min="0" required>
-                        </div>
+                    </fieldset>
+
+                    <div class="form-group">
+                        <label class="form-label" for="product-description">Descrição * <span class="form-label__hint">(mín. 100 caracteres)</span></label>
+                        <textarea id="product-description" name="description" class="form-textarea" rows="4" required minlength="100"></textarea>
                     </div>
                     <div class="form-group">
-                        <label class="form-label" for="product-description">Descrição</label>
-                        <textarea id="product-description" name="description" class="form-textarea" rows="3"></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label class="form-label" for="product-images">URLs das imagens <span class="form-label__hint">(uma por linha)</span></label>
+                        <label class="form-label" for="product-images">URLs das imagens <span class="form-label__hint">(uma por linha, JPG, entre 500px e 1200px)</span></label>
                         <textarea id="product-images" name="images" class="form-textarea" rows="2" placeholder="https://example.com/imagem.jpg"></textarea>
                     </div>
                     <div class="form-actions">

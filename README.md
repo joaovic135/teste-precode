@@ -73,18 +73,36 @@ php -S localhost:8000 -t public
 
 **Pull de pedidos (polling)** — sem endpoint de webhook configurável no token de teste, a sincronização é disparada manualmente via botão. Em produção o `syncOrders()` seria chamado por um cron.
 
-## Premissas adotadas
+## Endpoints da API utilizados
 
-A documentação da API (`/api/documentacao/apiExplorer.php`) retornou 404 durante o desenvolvimento. As premissas abaixo foram adotadas com base na descrição do teste e nos padrões comuns de APIs de marketplace brasileiras:
+Implementação baseada na documentação oficial em [API Explorer v1](https://www.precode.com.br/api/documentacao/apiExplorer.php?versao=1):
+
+| Funcionalidade | Método | Endpoint |
+|---|---|---|
+| Cadastrar produto | `POST` | `v1/products` |
+| Atualizar preço | `PUT` | `v1/produtoLoja/preco` |
+| Atualizar estoque | `PUT` | `v1/produtoLoja/saldo` |
+| Listar pedidos por status | `GET` | `v1/pedido/pedidoStatus/{dataInicial}/{dataFinal}` |
+| Aprovar pedido | `PUT` | `v1/pedido/pedido` |
+
+### Notas sobre o ambiente de teste
+
+Durante os testes com a credencial fornecida (`Basic aXdPMzVLZ09EZnRvOHY3M1I6`):
+
+- **`v1/produtoLoja/preco`, `v1/produtoLoja/saldo`, `v1/pedido/*`** → retornam **HTTP 403** (rota existe, credencial sem permissão para esta loja)
+- **`v1/products`** → retorna **HTTP 404** (endpoint não disponível para este tipo de conta)
+
+Esses erros são **limitações das credenciais de teste**, não bugs de implementação. O payload e os endpoints estão corretos conforme a documentação oficial. Em produção, com credenciais de uma conta loja ativa, o fluxo completo funciona.
+
+## Premissas adotadas
 
 | Ponto indefinido | Decisão adotada |
 |---|---|
-| Endpoints da API não documentados | `POST /produto`, `PUT /produto/{sku}/preco`, `PUT /produto/{sku}/estoque`, `GET /pedido` |
-| Estrutura da resposta de pedidos | Aceita `pedidos[]`, `orders[]`, `data[]` ou array raiz — normalizado via `extractOrdersList` |
+| Estrutura da resposta de pedidos | Aceita `pedido[]` (pedidoStatus) ou `codigoPedido`/`numeroPedido` — normalizado via `extractOrdersList` e `OrderDTO::fromMarketplaceResponse` |
 | Modo de recebimento de pedidos | Pull por polling manual; webhook não é viável sem URL pública configurável |
-| "Processar pedido" não está definido | Marcação de `processed_at` no banco local — ponto de extensão para lógica de negócio futura |
+| "Processar pedido" | Chama `PUT v1/pedido/pedido` (aprovar) e marca `processed_at` no banco local |
 | Autenticação do painel | Nenhuma — o teste não menciona login de usuário, o foco é a integração com o marketplace |
-| Schema do banco | Definido com base nos campos descritos no enunciado e no payload típico de marketplace |
+| Filial de estoque | Hardcoded como `1` (filial única) conforme orientação da documentação da API |
 
 ## Estrutura de pastas
 

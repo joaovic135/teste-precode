@@ -30,7 +30,7 @@ class ProductService
         $this->repository->insert($dto);
 
         try {
-            $this->apiClient->post('produto', $dto->toMarketplacePayload());
+            $this->apiClient->post('products', $dto->toMarketplacePayload());
             $this->repository->updateMarketplaceStatus($dto->sku, 'sent');
 
             return ['sku' => $dto->sku, 'marketplace_status' => 'sent'];

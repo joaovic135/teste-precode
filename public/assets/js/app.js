@@ -149,13 +149,23 @@ const Products = {
             .map(u => u.trim())
             .filter(u => u.length > 0);
 
+        const promotionalPriceRaw = form.promotional_price.value.trim();
+
         const payload = {
-            sku:         form.sku.value.trim(),
-            name:        form.name.value.trim(),
-            category:    form.category.value.trim(),
-            description: form.description.value.trim(),
-            price:       parseFloat(form.price.value),
-            stock:       parseInt(form.stock.value, 10),
+            sku:               form.sku.value.trim(),
+            name:              form.name.value.trim(),
+            brand:             form.brand.value.trim(),
+            category:          form.category.value.trim(),
+            ean:               form.ean.value.trim(),
+            description:       form.description.value.trim(),
+            price:             parseFloat(form.price.value),
+            promotional_price: promotionalPriceRaw ? parseFloat(promotionalPriceRaw) : parseFloat(form.price.value),
+            cost:              parseFloat(form.cost.value),
+            weight:            parseFloat(form.weight.value),
+            width:             parseFloat(form.width.value),
+            height:            parseFloat(form.height.value),
+            length:            parseFloat(form.length.value),
+            stock:             parseInt(form.stock.value, 10),
             images,
         };
 
