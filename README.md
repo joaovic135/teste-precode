@@ -1,14 +1,14 @@
-# Hub Marketplace - Precode
+# Hub Marketplace — Precode
 
-Painel de integração com o marketplace Precode. Permite cadastrar produtos no catálogo, atualizar preços e estoques, e receber pedidos gerados na plataforma via API REST com autenticação Basic.
+Painel de integração com o marketplace Precode. Permite **cadastrar produtos** no catálogo, **atualizar preços e estoques**, **criar pedidos** e **aprovar ou cancelar** pedidos diretamente pela API REST com autenticação Basic.
 
 ## Pré-requisitos
 
-- PHP 8.1+
+- PHP 8.3+
 - Composer
 - PostgreSQL 13+
 - Extensões PHP: `pdo_pgsql`, `curl`, `json`
-- Servidor web com suporte a `mod_rewrite` (Apache) ou equivalente
+- Servidor web com `mod_rewrite` habilitado (Apache)
 
 ## Como executar localmente
 
@@ -22,12 +22,15 @@ docker compose up --build -d
 
 Acesse `http://localhost:8080`. O banco sobe com as migrations aplicadas automaticamente.
 
-Para parar:
-
 ```bash
-docker compose down          # mantém os dados
-docker compose down -v       # remove o volume do banco também
+docker compose down       # mantém os dados
+docker compose down -v    # remove o volume do banco também
 ```
+
+> **Atualização de schema em instâncias existentes:** se o volume já existia antes da última versão, rode manualmente:
+> ```bash
+> docker compose exec db psql -U postgres -d hub_marketplace -f /docker-entrypoint-initdb.d/02_migrations_v3.sql
+> ```
 
 ### Sem Docker
 
@@ -36,7 +39,7 @@ git clone <repositório>
 cd hub-marketplace
 
 cp .env.example .env
-# edite .env com as credenciais do banco
+# edite .env com as credenciais do banco e da API
 
 composer install
 
@@ -51,46 +54,53 @@ php -S localhost:8000 -t public
 
 ## Variáveis de ambiente
 
-| Variável | Descrição | Exemplo |
-|---|---|---|
-| `DB_HOST` | Host do PostgreSQL | `localhost` |
-| `DB_PORT` | Porta | `5432` |
-| `DB_NAME` | Nome do banco | `hub_marketplace` |
-| `DB_USER` | Usuário | `postgres` |
-| `DB_PASS` | Senha | |
-| `MARKETPLACE_API_URL` | Base URL da API | `https://www.replicade.com.br/api/v3` |
-| `MARKETPLACE_API_TOKEN` | Token de autenticação | `Basic aXdPMzVLZ09EZnRvOHY3M1I6` |
+| Variável                | Descrição                                     | Exemplo                                    |
+|-------------------------|-----------------------------------------------|--------------------------------------------|
+| `DB_HOST`               | Host do PostgreSQL                            | `localhost`                                |
+| `DB_PORT`               | Porta do PostgreSQL                           | `5432`                                     |
+| `DB_NAME`               | Nome do banco                                 | `hub_marketplace`                          |
+| `DB_USER`               | Usuário do banco                              | `postgres`                                 |
+| `DB_PASS`               | Senha do banco                                | `postgres`                                 |
+| `MARKETPLACE_API_URL`   | URL base da API (sem versão)                  | `https://www.replicade.com.br/api`         |
+| `MARKETPLACE_API_TOKEN` | Token de autenticação Basic                   | `Basic aXdPMzVLZ09EZnRvOHY3M1I6`          |
 
 ## Endpoints da API utilizados
 
-Implementação baseada na [documentação oficial v3](https://www.precode.com.br/api/documentacao/apiExplorer.php?versao=3):
+Implementação baseada na [documentação oficial](https://www.precode.com.br/api/documentacao/apiExplorer.php?versao=3):
 
-| Funcionalidade | Método | Endpoint |
-|---|---|---|
-| Cadastrar produto | `POST` | `v3/products` |
-| Atualizar preço e estoque | `PUT` | `v3/products/inventory` |
-| Fila de pedidos (próximo) | `GET` | `v3/orders` |
-| Informar pedido no ERP | `POST` | `v3/orders/{id}/pedidoerp` |
-| Remover pedido da fila | `DELETE` | `v3/orders/{id}` |
+| Funcionalidade           | Método     | Endpoint                         | Versão |
+|--------------------------|------------|----------------------------------|--------|
+| Cadastrar produto        | `POST`     | `v3/products`                    | v3     |
+| Atualizar preço/estoque  | `PUT`      | `v3/products/inventory`          | v3     |
+| Fila de pedidos          | `GET`      | `v3/orders`                      | v3     |
+| Criar pedido             | `POST`     | `v1/pedido/pedido`               | v1     |
+| Aprovar pedido           | `PUT`      | `v1/pedido/pedido`               | v1     |
+| Cancelar pedido          | `DELETE`   | `v1/pedido/pedido`               | v1     |
 
 ### Notas sobre o ambiente de teste
 
 Com a credencial fornecida (`Basic aXdPMzVLZ09EZnRvOHY3M1I6`):
 
-- **`PUT v3/products/inventory`** → retorna **HTTP 200** com `code: 3` ("SKU ou REF não encontrado") — endpoint funcional, produto ainda não cadastrado via `POST v3/products`
-- **`POST v3/products`** → retorna **HTTP 404** — endpoint não disponível para este tipo de conta de teste
-- **`GET v3/orders`** → retorna **HTTP 403** — rota existe, credencial sem permissão para esta loja
+| Endpoint                    | Resultado observado                                                              |
+|-----------------------------|----------------------------------------------------------------------------------|
+| `POST v1/pedido/pedido`     | **HTTP 200** — pedido criado com sucesso, retorna `numeroPedido`                 |
+| `PUT v1/pedido/pedido`      | **HTTP 200** — aprovação processada com sucesso                                  |
+| `DELETE v1/pedido/pedido`   | **HTTP 200** — cancelamento processado com sucesso                               |
+| `PUT v3/products/inventory` | **HTTP 200** com `code: 3` ("SKU ou REF não encontrado") — endpoint funcional   |
+| `POST v3/products`          | **HTTP 404** — endpoint não disponível para este tipo de conta de teste          |
+| `GET v3/orders`             | **HTTP 403** — rota existe, credencial sem permissão para esta loja              |
 
-O payload e os endpoints estão corretos conforme a documentação oficial. Em produção, com credenciais de uma conta loja ativa, o fluxo completo funciona.
+O fluxo completo de pedidos (`v1`) funciona com as credenciais de teste. As operações de produto (`v3/products`) requerem uma conta loja ativa para funcionar em produção.
 
 ## Estrutura de pastas
 
 ```
 ├── database/
-│   └── migrations.sql
-├── public/                  ← document root
+│   ├── migrations.sql          ← schema completo (fresh install)
+│   └── migrations_v3.sql       ← migrations incrementais (atualização)
+├── public/                     ← document root
 │   ├── .htaccess
-│   ├── index.php            ← front controller
+│   ├── index.php               ← front controller
 │   ├── assets/
 │   │   ├── css/app.css
 │   │   └── js/app.js
@@ -98,7 +108,8 @@ O payload e os endpoints estão corretos conforme a documentação oficial. Em p
 │       └── dashboard.php
 ├── src/
 │   ├── Config/
-│   │   └── Database.php
+│   │   ├── Database.php
+│   │   └── Environment.php
 │   ├── DTO/
 │   │   ├── OrderDTO.php
 │   │   ├── PriceStockDTO.php
@@ -115,5 +126,7 @@ O payload e os endpoints estão corretos conforme a documentação oficial. Em p
 │       ├── ProductRepository.php
 │       └── UpdateLogRepository.php
 ├── .env.example
-└── composer.json
+├── composer.json
+├── Dockerfile
+└── docker-compose.yml
 ```
