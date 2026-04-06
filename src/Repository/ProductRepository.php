@@ -4,18 +4,12 @@ declare(strict_types=1);
 
 namespace App\Repository;
 
-use App\Config\Database;
 use App\DTO\ProductDTO;
 use PDO;
 
 class ProductRepository
 {
-    private PDO $db;
-
-    public function __construct()
-    {
-        $this->db = Database::connection();
-    }
+    public function __construct(private PDO $db) {}
 
     public function findAll(): array
     {

@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Config\Database;
 use App\Config\Environment;
 use App\Http\ApiClient;
 use App\Http\Router;
@@ -32,12 +33,13 @@ $apiClient = new ApiClient(
     $_ENV['MARKETPLACE_API_TOKEN'] ?? 'Basic aXdPMzVLZ09EZnRvOHY3M1I6',
 );
 
-$productRepository = new ProductRepository();
+$db                = Database::connection();
+$productRepository = new ProductRepository($db);
 
 $router = new Router(
     new ProductService($productRepository, $apiClient),
-    new PriceStockService($productRepository, new UpdateLogRepository(), $apiClient),
-    new OrderService(new OrderRepository(), $apiClient),
+    new PriceStockService($productRepository, new UpdateLogRepository($db), $apiClient),
+    new OrderService(new OrderRepository($db), $apiClient),
 );
 
 try {
