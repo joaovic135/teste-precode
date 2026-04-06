@@ -12,6 +12,25 @@ Painel de integração com o marketplace Precode. Permite cadastrar produtos no 
 
 ## Como executar localmente
 
+### Com Docker (recomendado)
+
+```bash
+git clone <repositório>
+cd hub-marketplace
+docker compose up --build -d
+```
+
+Acesse `http://localhost:8080`. O banco sobe com as migrations aplicadas automaticamente.
+
+Para parar:
+
+```bash
+docker compose down          # mantém os dados
+docker compose down -v       # remove o volume do banco também
+```
+
+### Sem Docker
+
 ```bash
 git clone <repositório>
 cd hub-marketplace
@@ -24,7 +43,7 @@ composer install
 psql -U postgres -d hub_marketplace -f database/migrations.sql
 ```
 
-Configure o document root do servidor para apontar para `public/`. Com PHP built-in:
+Configure o document root para `public/`. Com PHP built-in:
 
 ```bash
 php -S localhost:8000 -t public
