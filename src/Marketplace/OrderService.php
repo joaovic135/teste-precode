@@ -150,10 +150,18 @@ class OrderService
 
         $codigoPedido = (int) ($order['marketplace_codigo_pedido'] ?? 0);
 
+        if ($codigoPedido <= 0) {
+            return [
+                'marketplace_order_id' => $marketplaceOrderId,
+                'approved'             => false,
+                'error'                => 'Pedido sem código Precode — não é possível aprovar via API. Recrie o pedido para obter o código.',
+            ];
+        }
+
         try {
             $this->apiClient->put('v1/pedido/pedido', [
                 'pedido' => [
-                    'codigoPedido'     => $codigoPedido > 0 ? $codigoPedido : (int) $marketplaceOrderId,
+                    'codigoPedido'     => $codigoPedido,
                     'idPedidoParceiro' => $order['partner_order_id'] ?? '',
                 ],
             ]);
@@ -182,10 +190,18 @@ class OrderService
 
         $codigoPedido = (int) ($order['marketplace_codigo_pedido'] ?? 0);
 
+        if ($codigoPedido <= 0) {
+            return [
+                'marketplace_order_id' => $marketplaceOrderId,
+                'cancelled'            => false,
+                'error'                => 'Pedido sem código Precode — não é possível cancelar via API. Recrie o pedido para obter o código.',
+            ];
+        }
+
         try {
             $this->apiClient->delete('v1/pedido/pedido', [
                 'pedido' => [
-                    'codigoPedido'     => $codigoPedido > 0 ? $codigoPedido : (int) $marketplaceOrderId,
+                    'codigoPedido'     => $codigoPedido,
                     'idPedidoParceiro' => $order['partner_order_id'] ?? '',
                 ],
             ]);

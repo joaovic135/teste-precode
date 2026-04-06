@@ -305,13 +305,16 @@ const Orders = {
                 ? UI.badge('info', 'Enviado por nós')
                 : UI.badge('pending', 'Marketplace');
 
-            const canApprove = ['novo', 'analisando'].includes(o.status);
-            const canCancel  = !['cancelado', 'entregue'].includes(o.status);
+            const hasCodigo  = !!o.marketplace_codigo_pedido;
+            const canApprove = hasCodigo && ['novo', 'analisando'].includes(o.status);
+            const canCancel  = hasCodigo && !['cancelado', 'entregue'].includes(o.status);
+            const noCode     = !hasCodigo && o.origin === 'local' && o.status !== 'cancelado';
 
             const actions = `
                 ${canApprove ? `<button class="btn btn--success btn--sm" onclick="Orders.handleApprove('${id}')">Aprovar</button>` : ''}
                 ${canCancel  ? `<button class="btn btn--danger btn--sm" onclick="Orders.handleCancel('${id}')">Cancelar</button>` : ''}
-                ${!canApprove && !canCancel ? '<span class="text-muted">—</span>' : ''}
+                ${noCode ? UI.badge('warning', 'Sem cód. Precode', 'Pedido criado sem retorno do código Precode. Recrie o pedido para habilitar aprovação/cancelamento.') : ''}
+                ${!canApprove && !canCancel && !noCode ? '<span class="text-muted">—</span>' : ''}
             `.trim();
 
             return `
