@@ -292,7 +292,7 @@ class OrderService
 
     private function validateOrderData(array $data): void
     {
-        $required = ['cpfCnpj', 'nomeRazao', 'email', 'cep', 'bairro', 'cidade', 'uf'];
+        $required = ['cpfCnpj', 'nomeRazao', 'email', 'cep', 'endereco', 'numero', 'bairro', 'cidade', 'uf'];
 
         foreach ($required as $field) {
             if (empty($data[$field])) {

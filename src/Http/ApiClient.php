@@ -102,7 +102,12 @@ class ApiClient
             $message = $decoded['mensagem']
                 ?? $decoded['message']
                 ?? $decoded['error']
-                ?? "(sem mensagem)";
+                ?? null;
+
+            if ($message === null) {
+                $raw     = is_string($responseBody) ? trim(strip_tags($responseBody)) : '';
+                $message = $raw !== '' ? mb_substr($raw, 0, 300) : '(sem mensagem)';
+            }
 
             throw new RuntimeException(
                 "A API retornou erro {$httpCode} em {$method} /{$endpoint}: {$message}"
