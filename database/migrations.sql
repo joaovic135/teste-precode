@@ -36,9 +36,9 @@ CREATE TABLE IF NOT EXISTS price_stock_updates (
 CREATE TABLE IF NOT EXISTS orders (
     id                   SERIAL PRIMARY KEY,
     marketplace_order_id VARCHAR(100)   UNIQUE NOT NULL,
+    partner_order_id     VARCHAR(100)   DEFAULT '',
     status               VARCHAR(50)    NOT NULL,
     customer_name        VARCHAR(255)   DEFAULT '',
-    customer_email       VARCHAR(255)   DEFAULT '',
     total                NUMERIC(10, 2) DEFAULT 0,
     items                JSONB          DEFAULT '[]',
     raw_data             JSONB,
@@ -66,3 +66,6 @@ CREATE TRIGGER price_stock_updates_set_updated_at
 CREATE TRIGGER orders_set_updated_at
     BEFORE UPDATE ON orders
     FOR EACH ROW EXECUTE FUNCTION set_updated_at();
+
+CREATE INDEX IF NOT EXISTS idx_price_stock_updates_product_sku
+    ON price_stock_updates (product_sku);

@@ -77,12 +77,20 @@ class OrderService
             );
         }
 
-        $this->apiClient->put('pedido/pedido', [
-            'pedido' => [
-                'codigoPedido'    => (int) $marketplaceOrderId,
-                'idPedidoParceiro' => '',
-            ],
-        ]);
+        try {
+            $this->apiClient->put('pedido/pedido', [
+                'pedido' => [
+                    'codigoPedido'     => (int) $marketplaceOrderId,
+                    'idPedidoParceiro' => $order['partner_order_id'] ?? '',
+                ],
+            ]);
+        } catch (RuntimeException $e) {
+            return [
+                'marketplace_order_id' => $marketplaceOrderId,
+                'processed'            => false,
+                'error'                => $e->getMessage(),
+            ];
+        }
 
         $this->repository->markAsProcessed($marketplaceOrderId);
 

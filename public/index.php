@@ -28,10 +28,16 @@ if (in_array($requestUri, ['/', '/index.php', ''], true)) {
 header('Content-Type: application/json; charset=utf-8');
 header('X-Content-Type-Options: nosniff');
 
-$apiClient = new ApiClient(
-    $_ENV['MARKETPLACE_API_URL']   ?? 'https://www.replicade.com.br/api/v1',
-    $_ENV['MARKETPLACE_API_TOKEN'] ?? 'Basic aXdPMzVLZ09EZnRvOHY3M1I6',
-);
+$apiUrl   = $_ENV['MARKETPLACE_API_URL']   ?? '';
+$apiToken = $_ENV['MARKETPLACE_API_TOKEN'] ?? '';
+
+if ($apiUrl === '' || $apiToken === '') {
+    http_response_code(500);
+    echo json_encode(['success' => false, 'error' => 'Variáveis MARKETPLACE_API_URL e MARKETPLACE_API_TOKEN não configuradas no .env']);
+    exit;
+}
+
+$apiClient = new ApiClient($apiUrl, $apiToken);
 
 $db                = Database::connection();
 $productRepository = new ProductRepository($db);

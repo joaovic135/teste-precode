@@ -34,16 +34,16 @@ class OrderRepository
     {
         $stmt = $this->db->prepare(
             'INSERT INTO orders
-                (marketplace_order_id, status, customer_name, customer_email, total, items, raw_data)
+                (marketplace_order_id, partner_order_id, status, customer_name, total, items, raw_data)
              VALUES
-                (:marketplace_order_id, :status, :customer_name, :customer_email, :total, :items, :raw_data)'
+                (:marketplace_order_id, :partner_order_id, :status, :customer_name, :total, :items, :raw_data)'
         );
 
         $stmt->execute([
             ':marketplace_order_id' => $dto->marketplaceOrderId,
+            ':partner_order_id'     => $dto->partnerOrderId,
             ':status'               => $dto->status,
             ':customer_name'        => $dto->customerName,
-            ':customer_email'       => '',
             ':total'                => $dto->total,
             ':items'                => json_encode($dto->items),
             ':raw_data'             => json_encode($dto->rawData),

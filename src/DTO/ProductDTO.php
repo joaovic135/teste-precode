@@ -127,13 +127,16 @@ class ProductDTO
     public function toMarketplacePayload(): array
     {
         $variation = [
-            'ref'   => $this->sku,
-            'qty'   => (string) $this->stock,
-            'images' => $this->images,
+            'ref' => $this->sku,
+            'qty' => (string) $this->stock,
         ];
 
         if ($this->ean !== '') {
             $variation['ean'] = $this->ean;
+        }
+
+        if (!empty($this->images)) {
+            $variation['images'] = $this->images;
         }
 
         return [

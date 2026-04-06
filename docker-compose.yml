@@ -3,6 +3,9 @@ services:
     build: .
     ports:
       - "8080:80"
+    volumes:
+      - ./src:/var/www/html/src
+      - ./public:/var/www/html/public
     environment:
       DB_HOST: db
       DB_PORT: 5432

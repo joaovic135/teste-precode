@@ -39,14 +39,16 @@ const UI = {
         }).format(new Date(dateStr));
     },
 
-    productStatusBadge(status) {
+    productStatusBadge(status, errorMessage = '') {
         const map = {
             sent:    { cls: 'success', label: 'Enviado' },
             error:   { cls: 'error',   label: 'Erro' },
             pending: { cls: 'pending', label: 'Pendente' },
         };
         const { cls, label } = map[status] ?? { cls: 'pending', label: status };
-        return `<span class="badge badge--${cls}">${label}</span>`;
+        const title = status === 'error' && errorMessage
+            ? ` title="${errorMessage.replace(/"/g, '&quot;')}"` : '';
+        return `<span class="badge badge--${cls}"${title}>${label}</span>`;
     },
 
     updateStatusBadge(status) {
@@ -133,7 +135,7 @@ const Products = {
                 <td>${p.category || '—'}</td>
                 <td>${UI.formatCurrency(p.price)}</td>
                 <td>${p.stock}</td>
-                <td>${UI.productStatusBadge(p.marketplace_status)}</td>
+                <td>${UI.productStatusBadge(p.marketplace_status, p.marketplace_error)}</td>
                 <td>${UI.formatDate(p.created_at)}</td>
             </tr>
         `).join('');
@@ -345,11 +347,17 @@ const Orders = {
 
         try {
             const result = await Api.post('/api/orders/sync');
-            const label  = result.synced > 0
-                ? `${result.synced} pedido(s) novo(s) importado(s) de ${result.total_received} recebidos`
-                : `Nenhum pedido novo. ${result.total_received} recebidos do marketplace.`;
 
-            UI.showToast(label, 'success');
+            if (result.error) {
+                UI.showToast(`Erro ao sincronizar pedidos: ${result.error}`, 'error');
+            } else {
+                const label = result.synced > 0
+                    ? `${result.synced} pedido(s) novo(s) importado(s) de ${result.total_received} recebidos`
+                    : `Nenhum pedido novo. ${result.total_received} recebidos do marketplace.`;
+
+                UI.showToast(label, 'success');
+            }
+
             await Orders.load();
         } catch (err) {
             UI.showToast(err.message, 'error');
@@ -360,8 +368,14 @@ const Orders = {
 
     async handleProcess(marketplaceOrderId) {
         try {
-            await Api.post(`/api/orders/${encodeURIComponent(marketplaceOrderId)}/process`);
-            UI.showToast(`Pedido '${marketplaceOrderId}' marcado como processado`, 'success');
+            const result = await Api.post(`/api/orders/${encodeURIComponent(marketplaceOrderId)}/process`);
+
+            if (result.processed === false) {
+                UI.showToast(`Pedido salvo localmente, mas houve erro no marketplace: ${result.error}`, 'error');
+            } else {
+                UI.showToast(`Pedido '${marketplaceOrderId}' aprovado no marketplace`, 'success');
+            }
+
             await Orders.load();
         } catch (err) {
             UI.showToast(err.message, 'error');

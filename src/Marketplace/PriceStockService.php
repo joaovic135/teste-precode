@@ -38,7 +38,10 @@ class PriceStockService
         );
 
         try {
-            $this->apiClient->put($dto->marketplaceEndpoint(), $dto->toMarketplacePayload());
+            $response = $this->apiClient->put($dto->marketplaceEndpoint(), $dto->toMarketplacePayload());
+
+            $this->assertApiProductSuccess($response, 'preço');
+
             $this->productRepository->updatePrice($sku, $newPrice);
             $this->updateLogRepository->markAsSent($logId);
 
@@ -69,7 +72,10 @@ class PriceStockService
         );
 
         try {
-            $this->apiClient->put($dto->marketplaceEndpoint(), $dto->toMarketplacePayload());
+            $response = $this->apiClient->put($dto->marketplaceEndpoint(), $dto->toMarketplacePayload());
+
+            $this->assertApiProductSuccess($response, 'estoque');
+
             $this->productRepository->updateStock($sku, $newStock);
             $this->updateLogRepository->markAsSent($logId);
 
@@ -84,5 +90,27 @@ class PriceStockService
     public function listUpdateHistory(): array
     {
         return $this->updateLogRepository->findAll();
+    }
+
+    /**
+     * A Precode retorna HTTP 200 mesmo em falha de negócio, indicando o erro via
+     * idMensagem != 0 dentro de produto[0]. Lança RuntimeException se o campo indicar falha.
+     */
+    private function assertApiProductSuccess(array $response, string $context): void
+    {
+        $first = $response['produto'][0] ?? null;
+
+        if ($first === null) {
+            return;
+        }
+
+        $idMensagem = (int) ($first['idMensagem'] ?? 0);
+
+        if ($idMensagem !== 0) {
+            $mensagem = (string) ($first['mensagem'] ?? 'erro desconhecido da API');
+            throw new RuntimeException(
+                "Falha ao atualizar {$context} no marketplace: {$mensagem} (código {$idMensagem})"
+            );
+        }
     }
 }

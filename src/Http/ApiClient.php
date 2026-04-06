@@ -87,7 +87,11 @@ class ApiClient
         }
 
         if ($httpCode >= 400) {
-            $message = $decoded['message'] ?? $decoded['error'] ?? "(sem mensagem)";
+            $message = $decoded['mensagem']
+                ?? $decoded['message']
+                ?? $decoded['error']
+                ?? "(sem mensagem)";
+
             throw new RuntimeException(
                 "A API retornou erro {$httpCode} em {$method} /{$endpoint}: {$message}"
             );

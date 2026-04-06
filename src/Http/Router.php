@@ -72,6 +72,12 @@ class Router
             return [];
         }
 
+        $raw = file_get_contents('php://input');
+
+        if ($raw === '' || $raw === false) {
+            return [];
+        }
+
         $contentType = $_SERVER['CONTENT_TYPE'] ?? '';
 
         if (!str_contains($contentType, 'application/json')) {
@@ -80,8 +86,7 @@ class Router
             );
         }
 
-        $raw     = file_get_contents('php://input');
-        $decoded = json_decode($raw ?: '{}', true);
+        $decoded = json_decode($raw, true);
 
         if (json_last_error() !== JSON_ERROR_NONE) {
             throw new InvalidArgumentException(

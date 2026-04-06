@@ -30,19 +30,42 @@ class ProductService
         $this->repository->insert($dto);
 
         try {
-            $this->apiClient->post('products', $dto->toMarketplacePayload());
+            $response = $this->apiClient->post('products', $dto->toMarketplacePayload());
+
+            $this->assertApiSuccess($response);
+
             $this->repository->updateMarketplaceStatus($dto->sku, 'sent');
 
             return ['sku' => $dto->sku, 'marketplace_status' => 'sent'];
         } catch (RuntimeException $e) {
             $this->repository->updateMarketplaceStatus($dto->sku, 'error', $e->getMessage());
 
-            return ['sku' => $dto->sku, 'marketplace_status' => 'error', 'error' => $e->getMessage()];
+            return [
+                'sku'                => $dto->sku,
+                'marketplace_status' => 'error',
+                'error'              => $e->getMessage(),
+            ];
         }
     }
 
     public function listProducts(): array
     {
         return $this->repository->findAll();
+    }
+
+    /**
+     * A Precode retorna HTTP 200 com campo "code" para indicar erros de negócio.
+     * code = 0 → sucesso; qualquer outro valor → mensagem de erro descrita na documentação.
+     */
+    private function assertApiSuccess(array $response): void
+    {
+        $code = (int) ($response['code'] ?? 0);
+
+        if ($code !== 0) {
+            $message = (string) ($response['message'] ?? 'erro desconhecido da API');
+            throw new RuntimeException(
+                "A API rejeitou o produto: {$message} (código {$code})"
+            );
+        }
     }
 }
